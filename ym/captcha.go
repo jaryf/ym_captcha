@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -61,7 +62,7 @@ func (m *YmCaptcha) CommonVerify(image, captchaType string) (res string, err err
 		return
 	}
 	defer response.Body.Close()
-	resBytes, err := ioutil.ReadAll(response.Body)
+	resBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return
 	}
@@ -81,20 +82,26 @@ func (m *YmCaptcha) CommonVerify(image, captchaType string) (res string, err err
 // # 通用双图滑块  20111
 // # slide_image 需要识别图片的小图片的base64字符串
 // # background_image 需要识别图片的背景图片的base64字符串(背景图需还原)
-func (m *YmCaptcha) SlideVerify(slideImage string, backgroundImage string) string {
-
-	config := map[string]interface{}{}
-	config["slide_image"] = slideImage
-	config["background_image"] = backgroundImage
-	config["type"] = "20111"
-	config["token"] = m.Token
-	configData, _ := json.Marshal(config)
-	body := bytes.NewBuffer([]byte(configData))
-	resp, err := http.Post(CustomUrl, "application/json;charset=utf-8", body)
+func (m *YmCaptcha) SlideVerify(slideImage string, backgroundImage string) (res string, err error) {
+	req := map[string]interface{}{}
+	req["slide_image"] = slideImage
+	req["background_image"] = backgroundImage
+	req["type"] = "20111"
+	req["token"] = m.Token
+	reqBytes, _ := json.Marshal(req)
+	resp, err := http.Post(CustomUrl, "application/json;charset=utf-8", bytes.NewReader(reqBytes))
 	defer resp.Body.Close()
-	data, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(data), err)
-	return string(data)
+	resBytes, _ := io.ReadAll(resp.Body)
+	var resData Result
+	err = json.Unmarshal(resBytes, &resData)
+	if err != nil {
+		return
+	}
+	if resData.Code == OkCode && resData.Data.Code == DataOkCode {
+		return resData.Data.Data, nil
+	} else {
+		return resData.Msg, fmt.Errorf("响应信息是%s", string(resBytes))
+	}
 }
 
 func (m *YmCaptcha) SinSlideVerify(image string) string {

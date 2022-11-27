@@ -7,8 +7,10 @@ type Result struct {
 }
 
 type Data struct {
-	Code      int    `json:"code"`
-	CaptchaId string `json:"captchaId"`
-	RecordId  string `json:"recordId"`
-	Data      string `json:"data"`
+	Code       int     `json:"code"`
+	Time       float64 `json:"time"`
+	UniqueCode string  `json:"unique_code"`
+	CaptchaId  string  `json:"captchaId"`
+	RecordId   string  `json:"recordId"`
+	Data       string  `json:"data"`
 }
